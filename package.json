@@ -1,0 +1,13 @@
+{
+  "name": "classroom-live",
+  "private": true,
+  "workspaces": [
+    "front",
+    "server"
+  ],
+  "scripts": {
+    "dev": "npm -w server run dev & npm -w front run dev",
+    "build": "npm -w front run build",
+    "typecheck": "npm -w front run typecheck"
+  }
+}
