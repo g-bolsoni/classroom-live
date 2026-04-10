@@ -5,6 +5,7 @@ import { config } from "./config.js";
 
 const app = express();
 app.use(express.json());
+app.get("/health", (req, res) => res.send({ status: "ok" }));
 
 const server = http.createServer(app);
 
