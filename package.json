@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "npm -w server run dev & npm -w front run dev",
     "build": "npm -w front run build",
-    "typecheck": "npm -w front run typecheck"
+    "typecheck": "npm -w server run typecheck && npm -w front run typecheck",
+    "test": "npm -w server run test && npm -w front run test"
   }
 }
