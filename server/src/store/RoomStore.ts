@@ -3,6 +3,10 @@ import type { Participant, Room } from "../Interfaces/global.js";
 export class RoomStore {
   private rooms = new Map<string, Room>();
 
+  clear() {
+    this.rooms.clear();
+  }
+
   createRoom(room: Room) {
     this.rooms.set(room.roomCode, room);
     return room;
@@ -31,6 +35,15 @@ export class RoomStore {
 
     if (!room) {
       return null;
+    }
+
+    const existingParticipant = room.participants.find(
+      (currentParticipant) =>
+        currentParticipant.socketId === participant.socketId,
+    );
+
+    if (existingParticipant) {
+      return room;
     }
 
     room.participants.push(participant);

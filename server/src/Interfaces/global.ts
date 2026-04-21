@@ -1,5 +1,6 @@
 export interface Participant {
   socketId: string;
+  displayName: string;
   role: "teacher" | "student";
 }
 
