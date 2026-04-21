@@ -1,13 +1,13 @@
-export const SocketConfig = {
-  Url: "http://localhost:3001",
-} as const;
-
 export const SocketEvent = {
   CreateRoom: "room:created",
   JoinRoom: "room:joined",
-  RoomError: "room:error",
   Connect: "connect",
   Disconnect: "disconnect",
   ServerWelcome: "server:welcome",
   ChatMessage: "chat:message",
+} as const;
+
+export const Roles = {
+  Teacher: "teacher",
+  Student: "student",
 } as const;

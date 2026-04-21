@@ -76,13 +76,9 @@ onMounted(() => {
     transports: ["websocket"],
   });
 
-  socket.on(SocketEvent.Connect, () => {
-    isConnected.value = true;
-  });
+  socket.on(SocketEvent.Connect, () => (isConnected.value = true));
 
-  socket.on(SocketEvent.Disconnect, () => {
-    isConnected.value = false;
-  });
+  socket.on(SocketEvent.Disconnect, () => (isConnected.value = false));
 
   socket.on(SocketEvent.ServerWelcome, (payload: ServerWelcomePayload) => {
     appendMessage({
