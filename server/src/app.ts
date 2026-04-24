@@ -81,57 +81,48 @@ export const registerSocketHandlers = (io: Server, store: RoomStore) => {
       emitParticipants(io, room);
     });
 
-    socket.on(
-      "room:joined",
-      ({
-        roomCode,
-        displayName,
-      }: {
-        roomCode: string;
-        displayName?: string;
-      }) => {
-        const normalizedDisplayName = normalizeDisplayName(displayName);
+    socket.on("room:joined",({ roomCode, displayName}: {roomCode: string; displayName?: string;}) => {
+			const normalizedDisplayName = normalizeDisplayName(displayName);
 
-        if (!normalizedDisplayName) {
-          socket.emit("room:error", {
-            message: "Name is required",
-            roomCode,
-          });
-          return;
-        }
+			if (!normalizedDisplayName) {
+				socket.emit("room:error", {
+					message: "Name is required",
+					roomCode,
+				});
+				return;
+			}
 
-        const room = store.getRoom(roomCode);
+			const room = store.getRoom(roomCode);
 
-        if (!room) {
-          socket.emit("room:error", {
-            message: "Room not found",
-            roomCode,
-          });
-          return;
-        }
+			if (!room) {
+				socket.emit("room:error", {
+					message: "Room not found",
+					roomCode,
+				});
+				return;
+			}
 
-        const nextParticipant: Participant = {
-          socketId: socket.id,
-          displayName: normalizedDisplayName,
-          role: Roles.Student,
-        };
-        const isNewParticipant = !room.participants.some(
-          (participant) => participant.socketId === socket.id,
-        );
-        const updatedRoom = store.addParticipant(roomCode, nextParticipant);
+			const nextParticipant: Participant = {
+				socketId: socket.id,
+				displayName: normalizedDisplayName,
+				role: Roles.Student,
+			};
+			const isNewParticipant = !room.participants.some(
+				(participant) => participant.socketId === socket.id,
+			);
+			const updatedRoom = store.addParticipant(roomCode, nextParticipant);
 
-        socket.join(roomCode);
-        socket.emit("room:joined", {
-          roomCode,
-          role: nextParticipant.role,
-        });
+			socket.join(roomCode);
+			socket.emit("room:joined", {
+				roomCode,
+				role: nextParticipant.role,
+			});
 
-        if (updatedRoom && isNewParticipant) {
-          socket.to(roomCode).emit("participant:joined", nextParticipant);
-          emitParticipants(io, updatedRoom);
-        }
-      },
-    );
+			if (updatedRoom && isNewParticipant) {
+				socket.to(roomCode).emit("participant:joined", nextParticipant);
+				emitParticipants(io, updatedRoom);
+			}
+		});
 
     socket.on("chat:message", (text: string) => {
       const room = store.getRoomBySocketId(socket.id);

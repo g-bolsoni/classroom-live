@@ -369,4 +369,32 @@ describe("createRealtimeServer", () => {
       role: "student",
     });
   });
+
+  it("não emite eventos de presença para outras salas", async () => {
+    const { url } = await startServer();
+
+    // Cria duas salas
+    const teacherA = await connectClient(url);
+    teacherA.emit("room:created", { displayName: "TeacherA" });
+    const { roomCode: codeA } = await waitForEvent<{ roomCode: string }>(teacherA, "room:created");
+
+    const teacherB = await connectClient(url);
+    teacherB.emit("room:created", { displayName: "TeacherB" });
+    const { roomCode: codeB } = await waitForEvent<{ roomCode: string }>(teacherB, "room:created");
+
+    // Aluno entra na sala A
+    const studentA = await connectClient(url);
+    const studentB = await connectClient(url);
+
+    studentA.emit("room:joined", { roomCode: codeA, displayName: "AlunoA" });
+    studentB.emit("room:joined", { roomCode: codeB, displayName: "AlunoB" });
+
+
+    // teacherB não deve receber eventos de presença da sala A
+    await waitForNoEvent(teacherB, "participant:joined");
+    await waitForNoEvent(teacherB, "room:participants");
+    // teacherA deve receber normalmente
+    await waitForEvent(teacherA, "participant:joined");
+    await waitForEvent(teacherA, "room:participants");
+  });
 });

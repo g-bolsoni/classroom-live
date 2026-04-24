@@ -128,9 +128,8 @@ watch(
   { immediate: true },
 );
 
-onBeforeUnmount(() => {
-  detachSocketListeners(props.socket);
-});
+onBeforeUnmount(() => { detachSocketListeners(props.socket);});
+defineExpose({ appendMessage });
 
 const sendMessage = () => {
   const text = messageInput.value.trim();

@@ -3,6 +3,7 @@
     <div
       class="bg-gray-900 text-white w-full h-full rounded-2xl max-w-5xl p-6 flex flex-col gap-6"
     >
+      <h1 class="text-2xl">{{ joinedRole }}</h1>
       <div v-if="joinedRole" class="flex flex-col gap-3 items-start">
         <p v-if="activeRoomCode" class="text-sm text-gray-300">
           Sala atual: {{ activeRoomCode }}
@@ -108,9 +109,12 @@
               <input
                 id="displayName"
                 type="text"
-                class="w-full rounded-xl border border-gray-700 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-blue-400"
+                class="
+                  w-full rounded-xl border border-gray-700 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-blue-400
+                  disabled:bg-gray-800/50 disabled:border-gray-600 disabled:text-gray-500 disabled:cursor-not-allowed"
                 :value="displayName"
                 placeholder="Ex.: Ana Paula"
+                :disabled="hasDataInSession"
                 @input="handleDisplayNameInput"
                 @keydown.enter="handlePrimaryAction"
               />
@@ -158,10 +162,6 @@
             >
           </div>
 
-          <p v-if="presenceMessage" class="mt-3 text-sm text-emerald-300">
-            {{ presenceMessage }}
-          </p>
-
           <ul class="mt-4 space-y-2">
             <li
               v-for="participant in participants"
@@ -182,6 +182,7 @@
         </aside>
 
         <Chat
+          ref="chatComponent"
           :current-display-name="displayName"
           :is-connected="isConnected"
           :room-code="activeRoomCode"
@@ -202,15 +203,16 @@ import type { Participant } from "./types/room";
 const socket = shallowRef<Socket | null>(null);
 
 const viewMode = ref<"create" | "join">("create");
-const displayName = ref("");
+const displayName = ref(sessionStorage.getItem("displayName") || '');
+const hasDataInSession = ref(!!sessionStorage.getItem("displayName"));
 const roomCode = ref("");
 const activeRoomCode = ref("");
 const joinedRole = ref<"teacher" | "student" | "">("");
 const errorMessage = ref("");
 const isConnected = ref(false);
 const participants = ref<Participant[]>([]);
-const presenceMessage = ref("");
 const roomLink = ref("");
+const chatComponent = ref<InstanceType<typeof Chat> | null>(null);
 
 const getRoomCodeFromPath = () => {
   const path = window.location.pathname.replace(/^\/+|\/+$/g, "");
@@ -278,7 +280,6 @@ onMounted(() => {
     activeRoomCode.value = p.roomCode;
     joinedRole.value = "teacher";
     errorMessage.value = "";
-    presenceMessage.value = "";
     navigateToRoom(p.roomCode);
   });
 
@@ -289,7 +290,6 @@ onMounted(() => {
       activeRoomCode.value = p.roomCode;
       joinedRole.value = p.role ?? "student";
       errorMessage.value = "";
-      presenceMessage.value = "";
       roomLink.value = `${window.location.origin}/${p.roomCode}`;
     },
   );
@@ -308,11 +308,21 @@ onMounted(() => {
   );
 
   socket.value.on(SocketEvent.ParticipantJoined, (participant: Participant) => {
-    presenceMessage.value = `${participant.displayName} entrou na sala`;
+    chatComponent.value?.appendMessage({
+      id: `presence-${participant.socketId}`,
+      from: "server",
+      text: `${participant.displayName} entrou na sala`,
+      at: new Date().toISOString(),
+    });
   });
 
   socket.value.on(SocketEvent.ParticipantLeft, (participant: Participant) => {
-    presenceMessage.value = `${participant.displayName} saiu da sala`;
+    chatComponent.value?.appendMessage({
+      id: `presence-${participant.socketId}`,
+      from: "server",
+      text: `${participant.displayName} saiu da sala`,
+      at: new Date().toISOString(),
+    });
   });
 
   socket.value.on(SocketEvent.Connect, () => {
@@ -349,26 +359,22 @@ onBeforeUnmount(() => {
 const handleCreateRoom = () => {
   errorMessage.value = "";
   const normalizedDisplayName = validateDisplayName();
+  if (!normalizedDisplayName) return;
 
-  if (!normalizedDisplayName) {
-    return;
-  }
-
+  sessionStorage.setItem("displayName", normalizedDisplayName);
   createRoom(normalizedDisplayName);
 };
 
 const handleSignInRoom = () => {
   const normalizedDisplayName = validateDisplayName();
   const normalizedRoomCode = roomCode.value.trim();
-
-  if (!normalizedDisplayName) {
-    return;
-  }
-
+  if (!normalizedDisplayName) return;
   if (!normalizedRoomCode) {
     errorMessage.value = "Room code is required";
     return;
   }
+
+  sessionStorage.setItem("displayName", normalizedDisplayName);
 
   navigateToRoom(normalizedRoomCode);
   joinRoom(normalizedRoomCode, normalizedDisplayName);
